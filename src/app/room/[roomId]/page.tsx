@@ -1,7 +1,10 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useRef, useState } from "react";
+import { useUsername } from "@/hooks/use-username";
+import { client } from "@/lib/client";
 
 function formatTimeRemaining(seconds: number) {
   const mins = Math.floor(seconds / 60);
@@ -13,6 +16,7 @@ function formatTimeRemaining(seconds: number) {
 const ChatRoom = () => {
   const params = useParams();
   const roomId = params.roomId as string;
+  const { username } = useUsername();
 
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -22,11 +26,27 @@ const ChatRoom = () => {
     null
   );
 
+  const { mutate: sendMessage, isPending } = useMutation({
+    mutationFn: async ({ text }: { text: string }) => {
+      await client.messages.post(
+        { sender: username, text },
+        { query: { roomId } }
+      );
+    },
+  });
+
   const copyLink = () => {
     const url = window.location.href;
-    navigator.clipboard.writeText(url);
-    setCopyStatus("COPIED!");
-    setTimeout(() => setCopyStatus("COPY"), 2000);
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        setCopyStatus("COPIED!");
+        setTimeout(() => setCopyStatus("COPY"), 2000);
+      })
+      .catch(() => {
+        setCopyStatus("FAILED");
+        setTimeout(() => setCopyStatus("COPY"), 2000);
+      });
   };
 
   return (
@@ -91,7 +111,7 @@ const ChatRoom = () => {
               value={input}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && input.trim()) {
-                  // TODO: Send message
+                  sendMessage({ text: input });
                   inputRef.current?.focus();
                 }
               }}
@@ -103,6 +123,11 @@ const ChatRoom = () => {
 
           <button
             type="button"
+            onClick={() => {
+              sendMessage({ text: input });
+              inputRef.current?.focus();
+            }}
+            disabled={!input.trim() || isPending}
             className="bg-zinc-800 text-zinc-400 px-6 text-sm font-bold hover:text-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
             SEND
           </button>
