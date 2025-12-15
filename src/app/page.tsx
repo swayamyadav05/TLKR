@@ -1,9 +1,11 @@
 "use client";
 
-import { client } from "@/lib/client";
 import { useMutation } from "@tanstack/react-query";
-import { nanoid } from "nanoid";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { nanoid } from "nanoid";
+
+import { client } from "@/lib/client";
 
 const ANIMALS = ["wolf", "hawk", "bear", "shark", "whale"];
 const STORAGE_KEY = "chat_username";
@@ -15,6 +17,7 @@ const generateUsername = () => {
 
 export default function Home() {
   const [username, setUsername] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     const main = () => {
@@ -35,6 +38,10 @@ export default function Home() {
   const { mutate: createRoom } = useMutation({
     mutationFn: async () => {
       const res = await client.room.create.post();
+
+      if (res.status === 200) {
+        router.push(`/room/${res.data?.roomId}`);
+      }
     },
   });
 
@@ -50,10 +57,10 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="border-zinc-800 bg-zinc-900/50 p-6 backdrop:blur-md">
+        <div className="border-zinc-800 bg-zinc-900/50 p-6 backdrop-blur-md">
           <div className="space-y-5">
             <div className="space-y-2">
-              <div className="felx items-center text-zinc-500">
+              <div className="flex items-center text-zinc-500">
                 Your Identity
               </div>
 
