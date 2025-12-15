@@ -2,46 +2,25 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { nanoid } from "nanoid";
-
+import { useUsername } from "@/hooks/use-username";
 import { client } from "@/lib/client";
 
-const ANIMALS = ["wolf", "hawk", "bear", "shark", "whale"];
-const STORAGE_KEY = "chat_username";
-
-const generateUsername = () => {
-  const word = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
-  return `anonymous-${word}-${nanoid(5)}`;
-};
-
 export default function Home() {
-  const [username, setUsername] = useState("");
+  const { username } = useUsername();
   const router = useRouter();
-
-  useEffect(() => {
-    const main = () => {
-      const stored = localStorage.getItem(STORAGE_KEY);
-
-      if (stored) {
-        setUsername(stored);
-        return;
-      }
-
-      const generated = generateUsername();
-      localStorage.setItem(STORAGE_KEY, generated);
-      setUsername(generated);
-    };
-    main();
-  }, []);
 
   const { mutate: createRoom } = useMutation({
     mutationFn: async () => {
       const res = await client.room.create.post();
 
-      if (res.status === 200) {
+      if (res.status === 200 && res.data?.roomId) {
         router.push(`/room/${res.data?.roomId}`);
+        return res.data;
       }
+      throw new Error("Failed to create room");
+    },
+    onError: (error) => {
+      console.error("Room creation failed:", error);
     },
   });
 
