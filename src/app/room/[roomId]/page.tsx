@@ -24,6 +24,7 @@ const ChatRoom = () => {
   const { username } = useUsername();
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [copyStatus, setCopyStatus] = useState("COPY");
   const [timeRemaining, setTimeRemaining] = useState<number | null>(
@@ -79,7 +80,6 @@ const ChatRoom = () => {
         { sender: username, text },
         { query: { roomId } }
       );
-      setInput("");
     },
   });
 
@@ -96,6 +96,10 @@ const ChatRoom = () => {
       }
     },
   });
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const { mutate: destroyRoom } = useMutation({
     mutationFn: async () => {
@@ -154,7 +158,6 @@ const ChatRoom = () => {
                 ? formatTimeRemaining(timeRemaining)
                 : "--:--"}
             </span>
-            {/* TODO: set remaining time functionality {setTimeRemaining} */}
           </div>
         </div>
 
@@ -200,6 +203,7 @@ const ChatRoom = () => {
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       <div className="p-4 border-t border-zinc-800 bg-zinc-900/30">
@@ -212,8 +216,10 @@ const ChatRoom = () => {
               type="text"
               value={input}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && input.trim()) {
-                  sendMessage({ text: input });
+                if (e.key === "Enter" && input.trim() && !isPending) {
+                  const messageText = input;
+                  setInput("");
+                  sendMessage({ text: messageText });
                   inputRef.current?.focus();
                 }
               }}
@@ -226,7 +232,10 @@ const ChatRoom = () => {
           <button
             type="button"
             onClick={() => {
-              sendMessage({ text: input });
+              if (!input.trim() || isPending) return;
+              const messageText = input;
+              setInput("");
+              sendMessage({ text: messageText });
               inputRef.current?.focus();
             }}
             disabled={!input.trim() || isPending}
