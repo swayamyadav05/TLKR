@@ -12,7 +12,7 @@ const rooms = new Elysia({ prefix: "/room" })
     const roomId = nanoid();
 
     await redis.hset(`meta:${roomId}`, {
-      connected: JSON.stringify([]),
+      connected: [],
       createdAt: Date.now(),
     });
 
@@ -78,6 +78,7 @@ const messages = new Elysia({ prefix: "/messages" })
       const remaining = await redis.ttl(`meta:${roomId}`);
 
       await Promise.all([
+        redis.expire(`meta:${roomId}`, remaining),
         redis.expire(`messages:${roomId}`, remaining),
         redis.expire(`history:${roomId}`, remaining),
         redis.expire(roomId, remaining),

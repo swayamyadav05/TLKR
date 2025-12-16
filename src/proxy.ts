@@ -12,7 +12,7 @@ export const proxy = async (req: NextRequest) => {
   const roomId = roomMatch[1];
 
   const meta = await redis.hgetall<{
-    connected: string | string[];
+    connected: string[];
     createdAt: number;
   }>(`meta:${roomId}`);
 
@@ -24,25 +24,12 @@ export const proxy = async (req: NextRequest) => {
 
   const existingToken = req.cookies.get("x-auth-token")?.value;
 
-  // Parse connected field (handle both JSON string and array)
-  let connectedUsers: string[] = [];
-  if (typeof meta.connected === "string") {
-    try {
-      connectedUsers = JSON.parse(meta.connected);
-    } catch {
-      connectedUsers = [];
-    }
-  } else if (Array.isArray(meta.connected)) {
-    connectedUsers = meta.connected;
-  }
-
   // USER IS ALLOWED TO JOIN THE ROOM
-  if (existingToken && connectedUsers.includes(existingToken)) {
+  if (existingToken && meta.connected.includes(existingToken)) {
     return NextResponse.next();
   }
 
-  // USER IS NOT ALLOWED TO JOIN THE ROOM
-  if (connectedUsers.length >= 2) {
+  if (meta.connected.length >= 2) {
     return NextResponse.redirect(
       new URL("/?error=room-full", req.url)
     );
@@ -57,10 +44,11 @@ export const proxy = async (req: NextRequest) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
+    maxAge: 60 * 60 * 24, // 24 hours - persist across browser sessions
   });
 
   await redis.hset(`meta:${roomId}`, {
-    connected: JSON.stringify([...connectedUsers, token]),
+    connected: [...meta.connected, token],
   });
 
   return response;
