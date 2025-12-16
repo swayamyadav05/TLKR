@@ -24,6 +24,7 @@ const ChatRoom = () => {
   const { username } = useUsername();
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [copyStatus, setCopyStatus] = useState("COPY");
   const [timeRemaining, setTimeRemaining] = useState<number | null>(
@@ -96,6 +97,10 @@ const ChatRoom = () => {
     },
   });
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   const { mutate: destroyRoom } = useMutation({
     mutationFn: async () => {
       await client.room.delete(null, { query: { roomId } });
@@ -153,7 +158,6 @@ const ChatRoom = () => {
                 ? formatTimeRemaining(timeRemaining)
                 : "--:--"}
             </span>
-            {/* TODO: set remaining time functionality {setTimeRemaining} */}
           </div>
         </div>
 
@@ -199,6 +203,7 @@ const ChatRoom = () => {
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       <div className="p-4 border-t border-zinc-800 bg-zinc-900/30">
