@@ -11,6 +11,26 @@ export const proxy = async (req: NextRequest) => {
 
   const roomId = roomMatch[1];
 
+  // Detect bots/crawlers (link preview services)
+  const userAgent = req.headers.get("user-agent")?.toLowerCase() || "";
+  const isBot = 
+    userAgent.includes("whatsapp") ||
+    userAgent.includes("facebookexternalhit") ||
+    userAgent.includes("instagram") ||
+    userAgent.includes("telegrambot") ||
+    userAgent.includes("discordbot") ||
+    userAgent.includes("twitterbot") ||
+    userAgent.includes("slackbot") ||
+    userAgent.includes("linkedinbot") ||
+    userAgent.includes("bot") ||
+    userAgent.includes("crawler") ||
+    userAgent.includes("spider");
+
+  // Let bots through without authentication (they're just previewing)
+  if (isBot) {
+    return NextResponse.next();
+  }
+
   const meta = await redis.hgetall<{
     connected: string[];
     createdAt: number;
