@@ -20,6 +20,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.svg" sizes="any" />
+      </head>
       <body className={`${jetbrainsMono.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
