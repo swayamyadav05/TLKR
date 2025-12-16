@@ -79,7 +79,6 @@ const ChatRoom = () => {
         { sender: username, text },
         { query: { roomId } }
       );
-      setInput("");
     },
   });
 
@@ -212,8 +211,10 @@ const ChatRoom = () => {
               type="text"
               value={input}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && input.trim()) {
-                  sendMessage({ text: input });
+                if (e.key === "Enter" && input.trim() && !isPending) {
+                  const messageText = input;
+                  setInput("");
+                  sendMessage({ text: messageText });
                   inputRef.current?.focus();
                 }
               }}
@@ -226,7 +227,10 @@ const ChatRoom = () => {
           <button
             type="button"
             onClick={() => {
-              sendMessage({ text: input });
+              if (!input.trim() || isPending) return;
+              const messageText = input;
+              setInput("");
+              sendMessage({ text: messageText });
               inputRef.current?.focus();
             }}
             disabled={!input.trim() || isPending}
